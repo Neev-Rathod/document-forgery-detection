@@ -24,7 +24,7 @@ export default function Sidebar({ activeTab = "forensic", onTabChange }) {
           </div>
           <div>
             <h1 className="text-white font-bold text-lg tracking-tight">
-              VeriScan
+              ForgieShield
             </h1>
             <p className="text-[10px] text-cyan-400/60 uppercase tracking-widest font-bold -mt-1 font-mono">
               Forensic AI
@@ -57,28 +57,6 @@ export default function Sidebar({ activeTab = "forensic", onTabChange }) {
           );
         })}
       </nav>
-
-      <div className="p-4 mt-auto border-t border-white/5">
-        <div className="flex items-center gap-3 p-2 mb-4 bg-white/5 rounded-xl">
-          <div className="w-9 h-9 rounded-full bg-linear-to-br from-violet-500 to-cyan-500">
-            <img
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex"
-              alt="Avatar"
-              className="w-full h-full rounded-full"
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white text-xs font-bold truncate">Alex Carter</p>
-            <p className="text-white/30 text-[10px] truncate">
-              Lead Investigator
-            </p>
-          </div>
-        </div>
-        <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-cyan-500 text-[#0a1215] font-bold text-xs hover:bg-cyan-400 transition-colors">
-          <LogOut className="w-4 h-4" />
-          Logout
-        </button>
-      </div>
     </aside>
   );
 }

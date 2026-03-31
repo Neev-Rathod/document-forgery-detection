@@ -199,6 +199,7 @@ export async function analyzeDocument(file, blockchainAction = "save") {
       : payload.doctamper_preview || payload.forgery_preview,
     // Both detection previews for UI
     signature_preview_url: payload.signature_preview,
+    signature_crop_preview_url: payload.signature_crop_preview || "",
     forgery_preview_url: payload.forgery_preview,
     doctamper_preview_url: payload.doctamper_preview,
     // OCR and metadata

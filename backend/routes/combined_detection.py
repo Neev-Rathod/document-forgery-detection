@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import os
 import re
 from concurrent.futures import ThreadPoolExecutor
@@ -46,6 +47,7 @@ class CombinedDetectionResponse(BaseModel):
     signature_probabilities: dict[str, float]
     signature_box: Optional[SignatureBox]
     signature_preview: str
+    signature_crop_preview: str = ""
 
     # Copy-Move Forgery Detection Results
     forgery_type: str
@@ -209,12 +211,28 @@ def _select_preview_for_page(
     sig_result: dict[str, Any],
     copy_move_result: dict[str, Any],
     doctamper_result: dict[str, Any],
+    page_bytes: bytes | None = None,
 ) -> str:
+    """Select the best preview for a page, with fallback to encoded original."""
+    # Prioritize non-empty previews: doctamper > signature > copy_move
     if doctamper_result.get("annotated_preview"):
         return doctamper_result.get("annotated_preview", "")
     if sig_result.get("annotated_preview"):
         return sig_result.get("annotated_preview", "")
-    return copy_move_result.get("annotated_preview", "")
+    if copy_move_result.get("annotated_preview"):
+        return copy_move_result.get("annotated_preview", "")
+    
+    # Fallback: if all previews are empty, encode the original page as base64
+    if page_bytes:
+        try:
+            img = Image.open(BytesIO(page_bytes))
+            buf = BytesIO()
+            img.save(buf, format="PNG")
+            b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+            return f"data:image/png;base64,{b64}"
+        except Exception:
+            return ""
+    return ""
 
 
 def _page_severity_score(
@@ -397,6 +415,7 @@ async def combined_detection_predict(
                         sig_result,
                         copy_move_result,
                         doctamper_result,
+                        page_bytes,
                     ),
                     "severity": _page_severity_score(
                         sig_result,
@@ -513,6 +532,7 @@ async def combined_detection_predict(
         signature_probabilities=sig_result.get("probabilities", {}),
         signature_box=sig_box,
         signature_preview=sig_result.get("annotated_preview", ""),
+        signature_crop_preview=sig_result.get("signature_crop_preview", ""),
         # Copy-move detection
         forgery_type=copy_move_result.get("forgery_type", "unknown"),
         forgery_confidence=copy_move_result.get("confidence", 0.0),

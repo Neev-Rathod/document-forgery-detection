@@ -27,6 +27,7 @@ export default function ForensicReport({
   revokeMsg = "",
 }) {
   const [isRefreshingAudit, setIsRefreshingAudit] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   if (!result) return null;
 
@@ -39,15 +40,56 @@ export default function ForensicReport({
     reasons = [],
 
     document_metadata = {},
+    page_previews = [],
+    analyzed_pages = 1,
+    selected_page_index = 1,
+    signature_detected = false,
+    signature_preview_url = "",
+    signature_confidence = 0,
   } = result;
 
-  const displayConfidence = (confidence * 100).toFixed(0);
+  // Use signature confidence when signature is detected, otherwise use overall confidence
+  const displayConfidenceValue = signature_detected
+    ? signature_confidence
+    : confidence;
+
+  // Determine which preview to show - use page_previews if available
+  const previewPages =
+    Array.isArray(page_previews) && page_previews.length > 0
+      ? page_previews
+      : displayPreviewUrl
+        ? [displayPreviewUrl]
+        : [];
+
+  const safeInitialPage = Math.min(
+    Math.max(Number(selected_page_index || 1), 1),
+    previewPages.length || 1,
+  );
+
+  // Initialize to the selected page if not already set
+  if (currentPage === 1 && safeInitialPage > 1) {
+    setCurrentPage(safeInitialPage);
+  }
+
+  const boundedCurrentPage = Math.min(
+    Math.max(currentPage, 1),
+    previewPages.length || 1,
+  );
+
+  const currentPreviewUrl =
+    signature_detected && signature_preview_url
+      ? signature_preview_url
+      : previewPages.length > 0
+        ? previewPages[Math.max(0, boundedCurrentPage - 1)]
+        : displayPreviewUrl;
+
+  const displayConfidence = (displayConfidenceValue * 100).toFixed(0);
   const isHighRisk =
     risk_level === "high" || final_verdict?.toLowerCase().includes("forged");
 
   const handleDownloadReport = () => {
     const reportData = {
-      title: "VeriScan Forensic Analysis Report",
+      title: "ForgieShield Forensic Analysis Report",
       timestamp: new Date().toISOString(),
       document: document_metadata?.file_name || "Unknown",
       verdict: final_verdict,
@@ -311,7 +353,7 @@ export default function ForensicReport({
                       : "bg-emerald-500 text-[#060b0d] hover:bg-emerald-400"
                   }`}
                 >
-                  {storeLoading ? "⏳ Anchoring..." : "⬆ Anchor to Blockchain"}
+                  {storeLoading ? "⏳ Anchoring..." : "Anchor to Blockchain"}
                 </button>
               )}
 
@@ -347,20 +389,55 @@ export default function ForensicReport({
                 <span className="text-white/40 text-xs font-bold uppercase tracking-widest font-sans">
                   Document Forensic Viewport
                 </span>
+                {previewPages.length > 1 && (
+                  <span className="text-white/40 text-xs font-mono ml-2">
+                    (Page {boundedCurrentPage}/{previewPages.length})
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-4 text-white/30 font-sans">
-                <Search className="w-4 h-4 cursor-pointer hover:text-white transition-all font-sans" />
-                <RotateCw className="w-4 h-4 cursor-pointer hover:text-white transition-all font-sans" />
-                <Maximize2 className="w-4 h-4 cursor-pointer hover:text-white transition-all font-sans" />
+              <div className="flex items-center gap-4">
+                {previewPages.length > 1 && (
+                  <div className="inline-flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={boundedCurrentPage <= 1}
+                      className="px-3 py-1 text-xs rounded-md border border-white/15 text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      ← Prev
+                    </button>
+                    <span className="text-xs text-white/60 min-w-20 text-center">
+                      {boundedCurrentPage}/{previewPages.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage((p) =>
+                          Math.min(previewPages.length, p + 1),
+                        )
+                      }
+                      disabled={boundedCurrentPage >= previewPages.length}
+                      className="px-3 py-1 text-xs rounded-md border border-white/15 text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                )}
+                <div className="flex items-center gap-4 text-white/30 font-sans">
+                  <Search className="w-4 h-4 cursor-pointer hover:text-white transition-all font-sans" />
+                  <RotateCw className="w-4 h-4 cursor-pointer hover:text-white transition-all font-sans" />
+                  <Maximize2 className="w-4 h-4 cursor-pointer hover:text-white transition-all font-sans" />
+                </div>
               </div>
             </div>
 
             <div className="bg-[#122227] rounded-xl relative overflow-hidden aspect-[4/3] flex items-center justify-center p-8 font-sans">
               <div className="relative bg-white w-full h-full shadow-2xl border-4 border-[#1a3a44]/50 pointer-events-none font-sans overflow-hidden">
-                {displayPreviewUrl ? (
+                {currentPreviewUrl ? (
                   <img
-                    src={displayPreviewUrl}
+                    src={currentPreviewUrl}
                     className="w-full h-full object-contain mix-blend-multiply opacity-90 font-sans"
+                    alt={`Page ${boundedCurrentPage} preview`}
                   />
                 ) : (
                   <div className="p-12 space-y-4 font-sans">
@@ -382,11 +459,6 @@ export default function ForensicReport({
                     </div>
                   </div>
                 )}
-              </div>
-
-              {/* Scanline Effect Overlay */}
-              <div className="absolute inset-0 pointer-events-none font-sans overflow-hidden">
-                <div className="w-full h-1 bg-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.5)] absolute top-0 animate-[scan_4s_linear_infinite]" />
               </div>
             </div>
           </div>
@@ -489,13 +561,6 @@ export default function ForensicReport({
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes scan {
-          0% { top: -5%; }
-          100% { top: 105%; }
-        }
-      `}</style>
     </div>
   );
 }

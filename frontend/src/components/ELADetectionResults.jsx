@@ -1,305 +1,280 @@
 import { useState } from "react";
-import { CheckCircle, AlertCircle, Copy, Check } from "lucide-react";
+import { Layers, RotateCw } from "lucide-react";
+import { motion } from "framer-motion";
 
 /**
- * Component for displaying ELA forgery detection results and visualizations
+ * Component for displaying ELA forgery detection results with ForensicReport styling
  */
 export default function ELADetectionResults({ result, file, onBack }) {
-  const [copied, setCopied] = useState(null);
-
-  const copyToClipboard = (text, label) => {
-    navigator.clipboard.writeText(text);
-    setCopied(label);
-    setTimeout(() => setCopied(null), 2000);
-  };
+  const [currentImage, setCurrentImage] = useState("original"); // "original" or "ela"
 
   if (!result) return null;
 
   const isForged = result.is_forged;
   const confidence = result.confidence;
-  const verdictColor = isForged ? "text-red-400" : "text-emerald-400";
-  const verdictBg = isForged
-    ? "bg-red-500/10 border-red-500/30"
-    : "bg-emerald-500/10 border-emerald-500/30";
-  const verdictIcon = isForged ? (
-    <AlertCircle className="w-6 h-6" />
-  ) : (
-    <CheckCircle className="w-6 h-6" />
-  );
+  const tamperProbability = result.tamper_probability;
+  const authenticProbability = result.authentic_probability;
+
+  const riskLevel = isForged ? "high" : "low";
+  const finalVerdict = isForged ? "FORGED - Tampering Detected" : "AUTHENTIC";
+
+  const displayConfidence = (confidence * 100).toFixed(0);
+  const isHighRisk = isForged;
 
   return (
-    <div className="space-y-6">
-      {/* Verdict Card */}
-      <div className={`border rounded-xl p-6 ${verdictBg} backdrop-blur-sm`}>
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4">
-            <div className={verdictColor}>{verdictIcon}</div>
-            <div>
-              <h2 className="text-xl font-bold text-white mb-1">
-                {isForged ? "⚠️ TAMPERED" : "✅ AUTHENTIC"}
-              </h2>
-              <p className="text-white/60 text-sm">
-                {isForged
-                  ? "Image shows signs of tampering or forgery"
-                  : "Image appears to be authentic"}
-              </p>
-            </div>
+    <div className="flex-1 min-h-screen bg-[#060b0d] text-white p-8 overflow-y-auto font-sans">
+      {/* Header */}
+      <div className="flex items-end justify-between mb-8">
+        <div>
+          <p className="text-cyan-400/60 text-xs font-bold uppercase tracking-widest mb-1">
+            ELA Analysis › {file?.name || "Image Analysis"}
+          </p>
+          <h2 className="text-3xl font-extrabold text-white tracking-tight">
+            Error Level Analysis Results
+          </h2>
+          <div className="flex items-center gap-3 mt-1">
+            <span className="text-white/40 text-sm underline underline-offset-4 decoration-white/10">
+              Method: ELA + EfficientNet-B4
+            </span>
           </div>
-          <button
-            onClick={onBack}
-            className="text-white/50 hover:text-white transition-colors text-sm px-3 py-1 rounded border border-white/10 hover:border-white/20"
-          >
-            ← Back
-          </button>
         </div>
+        <button
+          onClick={onBack}
+          className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/70 font-bold text-sm hover:bg-white/10 transition-all flex items-center gap-2"
+        >
+          <RotateCw className="w-4 h-4" />
+          Analyze Another Image
+        </button>
       </div>
 
-      {/* Confidence Score */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-          <p className="text-white/50 text-xs uppercase tracking-widest mb-2">
-            Tamper Probability
-          </p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-red-400">
-              {(result.tamper_probability * 100).toFixed(1)}%
-            </span>
-            <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-red-500 transition-all duration-500"
-                style={{ width: `${result.tamper_probability * 100}%` }}
-              />
+      {/* Grid Layout */}
+      <div className="grid grid-cols-12 gap-8">
+        {/* Left Column: Scores & Verdict */}
+        <div className="col-span-4 space-y-8">
+          {/* Authenticity Score Circle */}
+          <div className="bg-[#0b1619] border border-white/5 rounded-2xl p-6 relative overflow-hidden shadow-2xl">
+            <div
+              className={`absolute top-0 right-0 w-32 h-32 ${isHighRisk ? "bg-red-500/10" : "bg-emerald-500/10"} blur-3xl rounded-full -mr-16 -mt-16`}
+            />
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-white/40 text-xs font-bold uppercase tracking-widest">
+                Tamper Detection Score
+              </span>
+              <span
+                className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${isHighRisk ? "bg-red-500/10 text-red-500" : "bg-emerald-500/10 text-emerald-500"}`}
+              >
+                {riskLevel} Risk
+              </span>
             </div>
-          </div>
-        </div>
 
-        <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-          <p className="text-white/50 text-xs uppercase tracking-widest mb-2">
-            Authentic Probability
-          </p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-emerald-400">
-              {(result.authentic_probability * 100).toFixed(1)}%
-            </span>
-            <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-emerald-500 transition-all duration-500"
-                style={{ width: `${result.authentic_probability * 100}%` }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Visualizations Grid */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-bold text-white">Visualizations</h3>
-
-        <div className="grid grid-cols-2 gap-4">
-          {/* Original Image */}
-          <div className="bg-white/5 border border-white/10 rounded-lg overflow-hidden">
-            <div className="relative">
-              <img
-                src={result.original_preview}
-                alt="Original"
-                className="w-full h-auto"
-              />
-            </div>
-            <div className="p-3 border-t border-white/10">
-              <p className="text-xs font-mono text-white/60">Original Image</p>
-              {file && (
-                <p className="text-xs text-white/40 mt-1 truncate">
-                  {file.name}
+            <div className="flex items-center gap-6">
+              <div className="relative w-28 h-28 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="56"
+                    cy="56"
+                    r="50"
+                    className="stroke-[#132328]"
+                    strokeWidth="8"
+                    fill="none"
+                  />
+                  <motion.circle
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: confidence }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                    cx="56"
+                    cy="56"
+                    r="50"
+                    className={
+                      isHighRisk ? "stroke-red-500/80" : "stroke-emerald-500/80"
+                    }
+                    strokeWidth="8"
+                    fill="none"
+                    strokeDasharray="314.159"
+                    strokeLinecap="round"
+                    style={{
+                      filter: `drop-shadow(0 0 12px ${isHighRisk ? "rgba(239, 68, 68, 0.4)" : "rgba(16, 185, 129, 0.4)"})`,
+                    }}
+                  />
+                </svg>
+                <div className="absolute flex flex-col items-center">
+                  <span className="text-3xl font-black text-white">
+                    {displayConfidence}%
+                  </span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h4
+                  className={`font-black text-lg mb-1 leading-tight ${isHighRisk ? "text-red-500" : "text-emerald-500"}`}
+                >
+                  {finalVerdict}
+                </h4>
+                <p className="text-white/40 text-xs leading-relaxed">
+                  {isHighRisk
+                    ? "Image shows compression artifacts characteristic of tampering."
+                    : "Image shows consistent compression patterns indicating authenticity."}
                 </p>
-              )}
+              </div>
             </div>
           </div>
 
-          {/* ELA Map */}
-          <div className="bg-white/5 border border-white/10 rounded-lg overflow-hidden">
-            <div className="relative">
-              <img
-                src={result.ela_preview}
-                alt="ELA Map"
-                className="w-full h-auto"
-              />
-            </div>
-            <div className="p-3 border-t border-white/10">
-              <p className="text-xs font-mono text-white/60">
-                ELA Map (Compression Artifacts)
-              </p>
-              <p className="text-xs text-white/40 mt-1">
-                Bright areas indicate potential tampering
-              </p>
+          {/* Probability Scores */}
+          <div className="bg-[#0b1619] border border-white/5 rounded-2xl p-6 shadow-2xl">
+            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-6">
+              Detection Probabilities
+            </p>
+            <div className="space-y-4">
+              {/* Tamper Probability */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white/60 text-sm">
+                    Tampering Detected
+                  </span>
+                  <span className="text-red-400 font-bold">
+                    {(tamperProbability * 100).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${tamperProbability * 100}%` }}
+                    transition={{ duration: 0.8 }}
+                    className="h-full bg-red-500 rounded-full"
+                  />
+                </div>
+              </div>
+
+              {/* Authentic Probability */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white/60 text-sm">Authentic Image</span>
+                  <span className="text-emerald-400 font-bold">
+                    {(authenticProbability * 100).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${authenticProbability * 100}%` }}
+                    transition={{ duration: 0.8 }}
+                    className="h-full bg-emerald-500 rounded-full"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Tamper Mask */}
-          <div className="bg-white/5 border border-white/10 rounded-lg overflow-hidden">
-            <div className="relative">
-              <img
-                src={result.mask_preview}
-                alt="Tamper Mask"
-                className="w-full h-auto"
-              />
-            </div>
-            <div className="p-3 border-t border-white/10">
-              <p className="text-xs font-mono text-white/60">
-                Binary Tamper Mask
-              </p>
-              <p className="text-xs text-white/40 mt-1">
-                White = Suspicious regions
-              </p>
-            </div>
-          </div>
-
-          {/* Masked Overlay */}
-          <div className="bg-white/5 border border-white/10 rounded-lg overflow-hidden">
-            <div className="relative">
-              <img
-                src={result.masked_preview}
-                alt="Masked Overlay"
-                className="w-full h-auto"
-              />
-            </div>
-            <div className="p-3 border-t border-white/10">
-              <p className="text-xs font-mono text-white/60">
-                Suspicious Regions Highlighted
-              </p>
-              <p className="text-xs text-white/40 mt-1">
-                Red overlay shows detected tampering areas
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Technical Details */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-white">Technical Details</h3>
-
-        <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-3">
-          <DetailRow
-            label="Method"
-            value="ELA + EfficientNet-B4"
-            onCopy={() => copyToClipboard("ELA + EfficientNet-B4", "method")}
-            copied={copied === "method"}
-          />
-          <DetailRow
-            label="Model"
-            value="forgery_detector_full.pth"
-            onCopy={() => copyToClipboard("forgery_detector_full.pth", "model")}
-            copied={copied === "model"}
-          />
-          <DetailRow
-            label="Training Data"
-            value="CASIA 2.0 (12,615 images)"
-            onCopy={() =>
-              copyToClipboard("CASIA 2.0 - 12,615 images", "training")
-            }
-            copied={copied === "training"}
-          />
-          <DetailRow
-            label="Expected Accuracy"
-            value="96-99%"
-            onCopy={() => copyToClipboard("96-99%", "accuracy")}
-            copied={copied === "accuracy"}
-          />
-          <DetailRow
-            label="Input Size"
-            value="224×224 (ELA Map)"
-            onCopy={() => copyToClipboard("224×224", "input")}
-            copied={copied === "input"}
-          />
-        </div>
-      </div>
-
-      {/* How It Works */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-white">How It Works</h3>
-        <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-3">
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30 text-xs font-bold text-cyan-400">
-              1
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">
-                Error Level Analysis (ELA)
-              </p>
-              <p className="text-xs text-white/60 mt-1">
-                Re-compresses image at 90% quality and detects compression
-                artifacts
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30 text-xs font-bold text-cyan-400">
-              2
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">
-                Feature Extraction
-              </p>
-              <p className="text-xs text-white/60 mt-1">
-                ELA map processed through EfficientNet-B4 backbone (1792
-                features)
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30 text-xs font-bold text-cyan-400">
-              3
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">Classification</p>
-              <p className="text-xs text-white/60 mt-1">
-                Custom classifier head predicts authentic (0) or tampered (1)
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30 text-xs font-bold text-cyan-400">
-              4
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">Visualization</p>
-              <p className="text-xs text-white/60 mt-1">
-                Generates tamper mask highlighting suspicious regions
-              </p>
+          {/* File Info */}
+          <div className="bg-[#0b1619] border border-white/5 rounded-2xl p-6 shadow-2xl">
+            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4">
+              File Information
+            </p>
+            <div className="space-y-3">
+              <div>
+                <p className="text-white/50 text-xs mb-1">File Name</p>
+                <p className="text-white font-mono text-sm truncate">
+                  {file?.name || "N/A"}
+                </p>
+              </div>
+              <div className="border-t border-white/10 pt-3">
+                <p className="text-white/50 text-xs mb-1">Analysis Method</p>
+                <p className="text-white text-sm">ELA + EfficientNet-B4</p>
+              </div>
+              <div className="border-t border-white/10 pt-3">
+                <p className="text-white/50 text-xs mb-1">Model Accuracy</p>
+                <p className="text-white text-sm">96-99%</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Disclaimer */}
-      <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
-        <p className="text-xs text-amber-400">
-          ⚠️ <strong>Note:</strong> This detection method uses AI and should not
-          be considered definitive forensic proof. For legal and official
-          purposes, consult qualified forensic experts.
-        </p>
-      </div>
-    </div>
-  );
-}
+        {/* Right Column: Image Viewer */}
+        <div className="col-span-8 space-y-8">
+          {/* Document Forensic Viewport */}
+          <div className="bg-[#0b1619] border border-white/5 rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-cyan-400" />
+                <span className="text-white/40 text-xs font-bold uppercase tracking-widest">
+                  Visualization Viewer
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentImage("original")}
+                  className={`px-3 py-1 text-xs rounded-md border transition-all ${
+                    currentImage === "original"
+                      ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-400"
+                      : "border-white/15 text-white/50 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  Original
+                </button>
+                <button
+                  onClick={() => setCurrentImage("ela")}
+                  className={`px-3 py-1 text-xs rounded-md border transition-all ${
+                    currentImage === "ela"
+                      ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-400"
+                      : "border-white/15 text-white/50 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  ELA Map
+                </button>
+              </div>
+            </div>
 
-function DetailRow({ label, value, onCopy, copied }) {
-  return (
-    <div className="flex justify-between items-center py-2 border-b border-white/5 last:border-b-0">
-      <span className="text-xs uppercase tracking-widest text-white/50">
-        {label}
-      </span>
-      <button
-        onClick={onCopy}
-        className="flex items-center gap-2 text-xs text-white/70 hover:text-white transition-colors group"
-      >
-        <span className="font-mono text-violet-300">{value}</span>
-        {copied ? (
-          <Check className="w-4 h-4 text-emerald-400" />
-        ) : (
-          <Copy className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-        )}
-      </button>
+            <div className="bg-[#122227] rounded-xl relative overflow-hidden aspect-video flex items-center justify-center p-8">
+              <div className="relative bg-white w-full h-full shadow-2xl border-4 border-[#1a3a44]/50 pointer-events-none overflow-hidden">
+                {currentImage === "original" ? (
+                  <>
+                    <img
+                      src={result.original_preview}
+                      className="w-full h-full object-contain mix-blend-multiply opacity-90"
+                      alt="Original Image"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                      <p className="text-white text-xs font-medium">
+                        Original Image
+                      </p>
+                      <p className="text-white/60 text-[11px] mt-1">
+                        Original document before analysis
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <img
+                      src={result.ela_preview}
+                      className="w-full h-full object-contain mix-blend-multiply opacity-90"
+                      alt="ELA Map"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                      <p className="text-white text-xs font-medium">ELA Map</p>
+                      <p className="text-white/60 text-[11px] mt-1">
+                        Bright areas indicate potential compression artifacts
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* How ELA Works */}
+          <div className="bg-[#0b1619] border border-white/5 rounded-2xl p-6 shadow-2xl">
+            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4">
+              About Error Level Analysis
+            </p>
+            <p className="text-white/70 text-sm leading-relaxed">
+              Error Level Analysis (ELA) detects compression artifacts in
+              images. When an image is modified, the recompressed area shows
+              different error levels than the unmodified regions. The ELA map
+              highlights these differences, with brighter areas indicating
+              potential tampering or unauthorized modifications.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

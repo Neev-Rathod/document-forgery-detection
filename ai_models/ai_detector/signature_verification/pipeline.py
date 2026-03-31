@@ -193,6 +193,7 @@ class SignatureVerificationPipeline:
             "signature_detected": True,
             "signature_box": box_norm,
             "annotated_preview": self._to_data_url(image),
+            "signature_crop_preview": self._to_data_url(crop),
             "reason": "Signature region detected by layout model.",
             "weights": {
                 "layout": str(self.layout_model_path),
