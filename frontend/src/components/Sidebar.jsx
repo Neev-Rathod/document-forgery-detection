@@ -1,8 +1,16 @@
-import { Upload, FileSearch, History, ShieldCheck, LogOut } from "lucide-react";
+import {
+  Upload,
+  FileSearch,
+  History,
+  ShieldCheck,
+  LogOut,
+  Wand2,
+} from "lucide-react";
 
 const NAV_ITEMS = [
   { id: "upload", label: "Upload", icon: Upload },
   { id: "forensic", label: "Forensic Reports", icon: FileSearch },
+  { id: "ela", label: "ELA Detection", icon: Wand2 },
   { id: "history", label: "History", icon: History },
 ];
 

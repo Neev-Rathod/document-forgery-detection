@@ -11,6 +11,7 @@ import {
   Type,
   Maximize2,
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function ForensicReport({
   result,

@@ -14,6 +14,7 @@ from routes.verify import router as verify_router
 from routes.revoke import router as revoke_router
 from routes.signature_verification import router as signature_verification_router
 from routes.combined_detection import router as combined_detection_router
+from routes.forgery_detector_ela import router as forgery_detector_ela_router
 
 app = FastAPI(
     title="Document Forgery Detection API",
@@ -49,6 +50,11 @@ app.include_router(
     combined_detection_router,
     prefix="/api/v1",
     tags=["Combined Detection"],
+)
+app.include_router(
+    forgery_detector_ela_router,
+    prefix="/api/v1",
+    tags=["Forgery Detection - ELA"],
 )
 
 

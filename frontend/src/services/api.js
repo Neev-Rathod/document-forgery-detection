@@ -313,3 +313,43 @@ export async function storeDocumentHash(fileHash) {
 
   return response.json();
 }
+
+/**
+ * Detect image forgery using ELA (Error Level Analysis) + EfficientNet-B4.
+ * Returns ELA map, binary mask, masked overlay, and confidence scores.
+ * @param {File} file
+ * @returns {Promise<{
+ *   is_forged: boolean,
+ *   forgery_type: string,
+ *   confidence: number,
+ *   tamper_probability: number,
+ *   authentic_probability: number,
+ *   all_scores: {authentic: number, tampered: number},
+ *   ela_preview: string,
+ *   mask_preview: string,
+ *   masked_preview: string,
+ *   original_preview: string
+ * }>}
+ */
+export async function detectForgereyELA(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${BASE_URL}/detect-forgery-ela`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response
+      .json()
+      .catch(() => ({ detail: "Unknown error" }));
+    const cleanMsg = extractErrorMessage(errorBody);
+    throw new Error(
+      cleanMsg || `Request failed with status ${response.status}`,
+    );
+  }
+
+  const payload = await response.json();
+  return payload;
+}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import FileUpload from "../components/FileUpload";
 import ForensicReport from "../components/ForensicReport";
+import ELADetection from "./ELADetection";
 import {
   analyzeDocument,
   storeDocumentHash,
@@ -248,6 +249,10 @@ export default function Home() {
       setStatus(STATUS.IDLE);
       setFile(null);
     }
+    if (tabId === "ela") {
+      // Reset file state for ELA detection
+      setFile(null);
+    }
   };
 
   const isLoading = status === STATUS.LOADING;
@@ -280,6 +285,12 @@ export default function Home() {
             storeMsg={storeMsg}
             revokeMsg={revokeMsg}
           />
+        ) : currentTab === "ela" ? (
+          <div className="flex-1 bg-[#060b0d] text-white p-8 overflow-y-auto">
+            <div className="max-w-6xl mx-auto">
+              <ELADetection />
+            </div>
+          </div>
         ) : currentTab === "history" ? (
           <div className="flex-1 bg-[#060b0d] text-white p-8 overflow-y-auto">
             <div className="max-w-6xl mx-auto">
